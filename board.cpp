@@ -15,8 +15,7 @@ Board::Board() {
 /*
  * Destructor for the board.
  */
-Board::~Board() {
-}
+Board::~Board() {}
 
 /*
  * Returns a copy of this board.
@@ -28,31 +27,26 @@ Board *Board::copy() {
     return newBoard;
 }
 
-bool Board::occupied(int x, int y) {
-    return taken[x + 8*y];
-}
+bool Board::occupied(int x, int y) { return taken[x + 8 * y]; }
 
 bool Board::get(Side side, int x, int y) {
-    return occupied(x, y) && (black[x + 8*y] == (side == BLACK));
+    return occupied(x, y) && (black[x + 8 * y] == (side == BLACK));
 }
 
 void Board::set(Side side, int x, int y) {
-    taken.set(x + 8*y);
-    black.set(x + 8*y, side == BLACK);
+    taken.set(x + 8 * y);
+    black.set(x + 8 * y, side == BLACK);
 }
 
 bool Board::onBoard(int x, int y) {
-    return(0 <= x && x < 8 && 0 <= y && y < 8);
+    return (0 <= x && x < 8 && 0 <= y && y < 8);
 }
-
 
 /*
  * Returns true if the game is finished; false otherwise. The game is finished
  * if neither side has a legal move.
  */
-bool Board::isDone() {
-    return !(hasMoves(BLACK) || hasMoves(WHITE));
-}
+bool Board::isDone() { return !(hasMoves(BLACK) || hasMoves(WHITE)); }
 
 /*
  * Returns true if there are legal moves for the given side.
@@ -151,16 +145,12 @@ int Board::count(Side side) {
 /*
  * Current count of black stones.
  */
-int Board::countBlack() {
-    return black.count();
-}
+int Board::countBlack() { return black.count(); }
 
 /*
  * Current count of white stones.
  */
-int Board::countWhite() {
-    return taken.count() - black.count();
-}
+int Board::countWhite() { return taken.count() - black.count(); }
 
 /*
  * Sets the board state given an 8x8 char array where 'w' indicates a white
@@ -173,7 +163,8 @@ void Board::setBoard(char data[]) {
         if (data[i] == 'b') {
             taken.set(i);
             black.set(i);
-        } if (data[i] == 'w') {
+        }
+        if (data[i] == 'w') {
             taken.set(i);
         }
     }

@@ -1,12 +1,12 @@
-#include <iostream>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 #include "player.hpp"
 using namespace std;
 
 int main(int argc, char *argv[]) {
     // Read in side the player is on.
-    if (argc != 2)  {
+    if (argc != 2) {
         cerr << "usage: " << argv[0] << " side" << endl;
         exit(-1);
     }

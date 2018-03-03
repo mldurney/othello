@@ -6,8 +6,7 @@
 using namespace std;
 
 class Board {
-
-private:
+   private:
     bitset<64> black;
     bitset<64> taken;
 
@@ -16,7 +15,7 @@ private:
     void set(Side side, int x, int y);
     bool onBoard(int x, int y);
 
-public:
+   public:
     Board();
     ~Board();
     Board *copy();

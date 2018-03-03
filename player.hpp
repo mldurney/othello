@@ -2,13 +2,12 @@
 #define __PLAYER_H__
 
 #include <iostream>
-#include "common.hpp"
 #include "board.hpp"
+#include "common.hpp"
 using namespace std;
 
 class Player {
-
-public:
+   public:
     Player(Side side);
     ~Player();
 

@@ -20,8 +20,7 @@ Player::Player(Side side) {
 /*
  * Destructor for the player.
  */
-Player::~Player() {
-}
+Player::~Player() {}
 
 /*
  * Compute the next move given the opponent's last move. Your AI is
