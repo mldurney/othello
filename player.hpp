@@ -19,9 +19,10 @@ class Player {
     void setOrder();
     void setSquares(vector<array<int, 2>> squares, int priority);
     void loadQueue();
+    void dequeueMove(Move *move);
     int to1D(int x, int y) { return x + 8 * y; }
-    int toX(int ind) { return ind / 8; }
-    int toY(int ind) { return ind % 8; }
+    int toX(int ind) { return ind % 8; }
+    int toY(int ind) { return ind / 8; }
 
    public:
     Player(Side s);

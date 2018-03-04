@@ -38,38 +38,30 @@ Player::~Player() {}
  * return nullptr.
  */
 Move *Player::doMove(Move *opponentsMove, int msLeft) {
-    cerr << "start opponent check...\n";
     // Process opponent's move
     if (opponentsMove != nullptr) {
         if (board.checkMove(opponentsMove, opponent)) {
             board.doMove(opponentsMove, opponent);
+            dequeueMove(opponentsMove);
         } else {
-            delete opponentsMove;
             cerr << "doMove error: Opponent's move invalid!\n";
             return nullptr;
         }
-
-        delete opponentsMove;
     }
-    cerr << "done opponent check...\n";
 
-    cerr << "start make move...\n";
     // Naive approach -- do first possible move in Roxanne queue
     Move *move = new Move(0, 0);
     for (vector<array<int, 2>>::iterator it = queue.begin(); it != queue.end();
          ++it) {
-        cerr << "start check move...\n";
         move->setX(toX((*it)[0]));
-        move->setX(toY((*it)[1]));
+        move->setY(toY((*it)[0]));
 
         if (board.checkMove(move, side)) {
             queue.erase(it);
             board.doMove(move, side);
             return move;
         }
-        cerr << "done make move...\n";
     }
-    cerr << "done make make..\n";
 
     return nullptr;
 }
@@ -128,20 +120,41 @@ void Player::setSquares(vector<array<int, 2>> squares, int priority) {
  * Load queue of moves to attempt first, based on priority order
  */
 void Player::loadQueue() {
+    vector<array<int, 2>>::iterator it;
+
     for (int i = 0; i < 64; ++i) {
         if (board.isOccupied(toX(i), toY(i))) {
             continue;
         }
 
-        for (vector<array<int, 2>>::iterator it = queue.begin();
-             it != queue.end(); ++it) {
+        for (it = queue.begin(); it != queue.end(); ++it) {
             // Insert index, priority pair as early as possible in queue
             if (order[i] <= (*it)[1]) {
                 queue.insert(it, {i, order[i]});
+                break;
             }
+        }
 
-            // If index not inserted earlier, then priority greater yet
+        // If index not inserted earlier, then priority greater yet
+        if (it == queue.end()) {
             queue.push_back({i, order[i]});
         }
     }
+}
+
+/**
+ * Remove move from queue
+ */
+void Player::dequeueMove(Move *move) {
+    int ind = to1D(move->getX(), move->getY());
+
+    for (vector<array<int, 2>>::iterator it = queue.begin(); it != queue.end();
+         ++it) {
+        if ((*it)[0] == ind) {
+            queue.erase(it);
+            return;
+        }
+    }
+
+    cerr << "dequeueMove error: No move dequeued\n";
 }
