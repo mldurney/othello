@@ -21,6 +21,7 @@ class Board {
     Board *copy();
 
     bool isDone();
+    bool isOccupied(int x, int y) { return occupied(x, y); }
     bool hasMoves(Side side);
     bool checkMove(Move *m, Side side);
     void doMove(Move *m, Side side);
