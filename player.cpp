@@ -6,8 +6,6 @@
  * within 30 seconds.
  */
 Player::Player(Side s) {
-    cerr << "start init player...\n";
-
     // Will be set to true in test_minimax.cpp.
     testingMinimax = false;
 
@@ -15,8 +13,6 @@ Player::Player(Side s) {
     opponent = (s == WHITE) ? BLACK : WHITE;
     setOrder();
     loadQueue();
-
-    cerr << "done init player...\n";
 }
 
 /**
@@ -63,6 +59,7 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
         }
     }
 
+    // No open moves, so pass
     return nullptr;
 }
 
