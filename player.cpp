@@ -9,14 +9,12 @@ Player::Player(Side s) {
     strat = STRATEGY;
     // Will be set to true in test_minimax.cpp.
     testingMinimax = false;
-    if (testingMinimax)
-        strat = MINIMAX;
+    if (testingMinimax) strat = MINIMAX;
 
     side = s;
     opponent = (s == WHITE) ? BLACK : WHITE;
     setOrder();
-    if (strat == ROXANNE)
-        loadQueue();
+    if (strat == ROXANNE) loadQueue();
 }
 
 /**
@@ -63,18 +61,17 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
         while (stack.size() > 0) {
             minGain = INF;
             move1 = pop();
-            tempBoard1 = board.copy();            // Board at depth 1
+            tempBoard1 = board.copy();  // Board at depth 1
             tempBoard1->doMove(move1, side);
 
             // For each player move, examines possible opponent moves
             numPush = loadStack(opponent, tempBoard1);
             for (int i = 0; i < numPush; i++) {
                 move2 = pop();
-                tempBoard2 = tempBoard1->copy();   // Board at depth 2
+                tempBoard2 = tempBoard1->copy();  // Board at depth 2
                 tempBoard2->doMove(move2, opponent);
                 gain = tempBoard2->count(side) - tempBoard2->count(opponent);
-                if (gain < minGain) 
-                    minGain = gain;
+                if (gain < minGain) minGain = gain;
             }
 
             // Picks player's best move
@@ -102,22 +99,22 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
         while (stack.size() > 0) {
             minGain = INF;
             move1 = pop();
-            tempBoard1 = board.copy();            // Board at depth 1
+            tempBoard1 = board.copy();  // Board at depth 1
             tempBoard1->doMove(move1, side);
             roxGain1 = roxGainTrans(order[to1D(move1->getX(), move1->getY())]);
-            
+
             // For each player move, examines possible opponent moves
             numPush = loadStack(opponent, tempBoard1);
             for (int i = 0; i < numPush; i++) {
                 move2 = pop();
-                tempBoard2 = tempBoard1->copy();   // Board at depth 2
+                tempBoard2 = tempBoard1->copy();  // Board at depth 2
                 tempBoard2->doMove(move2, opponent);
-                roxGain2 = roxGainTrans(order[to1D(move2->getX(), move2->getY())]);
+                roxGain2 =
+                    roxGainTrans(order[to1D(move2->getX(), move2->getY())]);
                 gain = tempBoard2->count(side) - tempBoard2->count(opponent);
                 gain -= roxGain2;
                 gain += roxGain1;
-                if (gain < minGain) 
-                    minGain = gain;
+                if (gain < minGain) minGain = gain;
             }
 
             // Picks player's best move
@@ -133,8 +130,8 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
     } else if (strat == ROXANNE) {
         // Naive approach -- do first possible move in Roxanne queue
         Move *move = new Move(0, 0);
-        for (vector<array<int, 2>>::iterator it = queue.begin(); it != queue.end();
-             ++it) {
+        for (vector<array<int, 2>>::iterator it = queue.begin();
+             it != queue.end(); ++it) {
             move->setX(toX((*it)[0]));
             move->setY(toY((*it)[0]));
 
@@ -146,13 +143,12 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
         }
     }
 
-
     // No open moves, so pass
     return nullptr;
 }
 
 double Player::roxGainTrans(double roxGain) {
-    return WEIGHT_C/(roxGain * roxGain * roxGain);
+    return WEIGHT_C / (roxGain * roxGain * roxGain);
 }
 
 /**
@@ -164,7 +160,7 @@ int Player::loadStack(Side s, Board *b) {
     int num = 0;
     for (int i = 0; i < 64; ++i) {
         move = new Move(toX(i), toY(i));
-        if (b->checkMove(move,s)) {
+        if (b->checkMove(move, s)) {
             num++;
             stack.insert(stack.begin(), move);
         }
@@ -175,11 +171,11 @@ int Player::loadStack(Side s, Board *b) {
 /**
  * Pops a move from the stack
  */
- Move *Player::pop() {
+Move *Player::pop() {
     Move *move = stack[0];
     stack.erase(stack.begin());
     return move;
- }
+}
 
 /**
  * Set move priority order according to Roxanne algorithm
@@ -273,13 +269,11 @@ void Player::dequeueMove(Move *move) {
 }
 
 // Sets the board to the given board
-void Player::setBoard(Board *b) {
-    board = *(b->copy());
-}
+void Player::setBoard(Board *b) { board = *(b->copy()); }
 
 // Prints the stack for testing purposes
 void Player::printStack() {
-    for (Move *m: stack) {
+    for (Move *m : stack) {
         cerr << "(" << m->getX() << ", " << m->getY() << ") ";
     }
     cerr << endl;

@@ -14,13 +14,13 @@ using namespace std;
 
 class Player {
    private:
-   	enum Strategy {ROXANNE, MINIMAX, COMBINATION};
+    enum Strategy { ROXANNE, MINIMAX, COMBINATION };
     Board board;
     Side side;
     Side opponent;
     int order[64];                // For Roxanne, priority order of squares
     vector<array<int, 2>> queue;  // For Roxanne, {ind, priority} of squares
-    vector<Move*> stack;		  // For Minimaz, Combination
+    vector<Move *> stack;         // For Minimaz, Combination
     Strategy strat;
     void setOrder();
     void setSquares(vector<array<int, 2>> squares, int priority);
@@ -43,7 +43,6 @@ class Player {
     // Flag to tell if the player is running within the test_minimax context
     bool testingMinimax;
     void setBoard(Board *b);
-
 };
 
 #endif
