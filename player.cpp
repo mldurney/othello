@@ -9,6 +9,8 @@ Player::Player(Side s) {
     strat = STRATEGY;
     // Will be set to true in test_minimax.cpp.
     testingMinimax = false;
+    if (testingMinimax)
+        strat = MINIMAX;
 
     side = s;
     opponent = (s == WHITE) ? BLACK : WHITE;
@@ -50,7 +52,7 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
     if (strat == MINIMAX) {
         // Minimax approach. Looks a depth of 2 into the future and picks a
         // move based on the number of stones
-        Move *bestMove, *move1, *move2;
+        Move *bestMove = nullptr, *move1, *move2;
         int maxMinGain = -(INF), minGain;
         int numPush;
         int gain;
@@ -65,7 +67,7 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
             tempBoard1->doMove(move1, side);
 
             // For each player move, examines possible opponent moves
-            numPush = loadStack(opponent, tempBoard2);
+            numPush = loadStack(opponent, tempBoard1);
             for (int i = 0; i < numPush; i++) {
                 move2 = pop();
                 tempBoard2 = tempBoard1->copy();   // Board at depth 2
@@ -86,7 +88,47 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
         return bestMove;
 
     } else if (strat == COMBINATION) {
+        // Combination approach. Looks a depth of 2 into the future and picks a
+        // move based on the number of stones and roxanne priotity
+        Move *bestMove = nullptr, *move1, *move2;
+        double maxMinGain = -(INF), minGain;
+        double roxGain1, roxGain2;
+        int numPush;
+        double gain;
+        Board *tempBoard1, *tempBoard2;
 
+        // Examines all possible moves for player
+        loadStack(side, &board);
+        while (stack.size() > 0) {
+            minGain = INF;
+            move1 = pop();
+            tempBoard1 = board.copy();            // Board at depth 1
+            tempBoard1->doMove(move1, side);
+            roxGain1 = roxGainTrans(order[to1D(move1->getX(), move1->getY())]);
+            
+            // For each player move, examines possible opponent moves
+            numPush = loadStack(opponent, tempBoard1);
+            for (int i = 0; i < numPush; i++) {
+                move2 = pop();
+                tempBoard2 = tempBoard1->copy();   // Board at depth 2
+                tempBoard2->doMove(move2, opponent);
+                roxGain2 = roxGainTrans(order[to1D(move2->getX(), move2->getY())]);
+                gain = tempBoard2->count(side) - tempBoard2->count(opponent);
+                gain -= roxGain2;
+                gain += roxGain1;
+                if (gain < minGain) 
+                    minGain = gain;
+            }
+
+            // Picks player's best move
+            if (minGain > maxMinGain) {
+                bestMove = move1;
+                maxMinGain = minGain;
+            }
+        }
+
+        board.doMove(bestMove, side);
+        return bestMove;
 
     } else if (strat == ROXANNE) {
         // Naive approach -- do first possible move in Roxanne queue
@@ -109,6 +151,10 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
     return nullptr;
 }
 
+double Player::roxGainTrans(double roxGain) {
+    return WEIGHT_C/(roxGain * roxGain * roxGain);
+}
+
 /**
  * For minimax, pushes stack of valid moves, in no particular oder
  * @return number of moves pushed
@@ -118,7 +164,7 @@ int Player::loadStack(Side s, Board *b) {
     int num = 0;
     for (int i = 0; i < 64; ++i) {
         move = new Move(toX(i), toY(i));
-        if (board.checkMove(move,s)) {
+        if (b->checkMove(move,s)) {
             num++;
             stack.insert(stack.begin(), move);
         }
@@ -224,4 +270,17 @@ void Player::dequeueMove(Move *move) {
             return;
         }
     }
+}
+
+// Sets the board to the given board
+void Player::setBoard(Board *b) {
+    board = *(b->copy());
+}
+
+// Prints the stack for testing purposes
+void Player::printStack() {
+    for (Move *m: stack) {
+        cerr << "(" << m->getX() << ", " << m->getY() << ") ";
+    }
+    cerr << endl;
 }

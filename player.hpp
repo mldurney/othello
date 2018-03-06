@@ -9,7 +9,8 @@
 using namespace std;
 
 #define INF 1000000000
-#define STRATEGY MINIMAX;
+#define STRATEGY COMBINATION
+#define WEIGHT_C 10
 
 class Player {
    private:
@@ -30,6 +31,8 @@ class Player {
     int to1D(int x, int y) { return x + 8 * y; }
     int toX(int ind) { return ind % 8; }
     int toY(int ind) { return ind / 8; }
+    double roxGainTrans(double roxGain);
+    void printStack();
 
    public:
     Player(Side s);
@@ -39,6 +42,8 @@ class Player {
 
     // Flag to tell if the player is running within the test_minimax context
     bool testingMinimax;
+    void setBoard(Board *b);
+
 };
 
 #endif
