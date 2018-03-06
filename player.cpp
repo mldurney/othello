@@ -6,13 +6,15 @@
  * within 30 seconds.
  */
 Player::Player(Side s) {
+    strat = STRATEGY;
     // Will be set to true in test_minimax.cpp.
     testingMinimax = false;
 
     side = s;
     opponent = (s == WHITE) ? BLACK : WHITE;
     setOrder();
-    loadQueue();
+    if (strat == ROXANNE)
+        loadQueue();
 }
 
 /**
@@ -45,23 +47,93 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
         }
     }
 
-    // Naive approach -- do first possible move in Roxanne queue
-    Move *move = new Move(0, 0);
-    for (vector<array<int, 2>>::iterator it = queue.begin(); it != queue.end();
-         ++it) {
-        move->setX(toX((*it)[0]));
-        move->setY(toY((*it)[0]));
+    if (strat == MINIMAX) {
+        // Minimax approach. Looks a depth of 2 into the future and picks a
+        // move based on the number of stones
+        Move *bestMove, *move1, *move2;
+        int maxMinGain = -(INF), minGain;
+        int numPush;
+        int gain;
+        Board *tempBoard1, *tempBoard2;
 
-        if (board.checkMove(move, side)) {
-            queue.erase(it);
-            board.doMove(move, side);
-            return move;
+        // Examines all possible moves for player
+        loadStack(side, &board);
+        while (stack.size() > 0) {
+            minGain = INF;
+            move1 = pop();
+            tempBoard1 = board.copy();            // Board at depth 1
+            tempBoard1->doMove(move1, side);
+
+            // For each player move, examines possible opponent moves
+            numPush = loadStack(opponent, tempBoard2);
+            for (int i = 0; i < numPush; i++) {
+                move2 = pop();
+                tempBoard2 = tempBoard1->copy();   // Board at depth 2
+                tempBoard2->doMove(move2, opponent);
+                gain = tempBoard2->count(side) - tempBoard2->count(opponent);
+                if (gain < minGain) 
+                    minGain = gain;
+            }
+
+            // Picks player's best move
+            if (minGain > maxMinGain) {
+                bestMove = move1;
+                maxMinGain = minGain;
+            }
+        }
+
+        board.doMove(bestMove, side);
+        return bestMove;
+
+    } else if (strat == COMBINATION) {
+
+
+    } else if (strat == ROXANNE) {
+        // Naive approach -- do first possible move in Roxanne queue
+        Move *move = new Move(0, 0);
+        for (vector<array<int, 2>>::iterator it = queue.begin(); it != queue.end();
+             ++it) {
+            move->setX(toX((*it)[0]));
+            move->setY(toY((*it)[0]));
+
+            if (board.checkMove(move, side)) {
+                queue.erase(it);
+                board.doMove(move, side);
+                return move;
+            }
         }
     }
+
 
     // No open moves, so pass
     return nullptr;
 }
+
+/**
+ * For minimax, pushes stack of valid moves, in no particular oder
+ * @return number of moves pushed
+ */
+int Player::loadStack(Side s, Board *b) {
+    Move *move;
+    int num = 0;
+    for (int i = 0; i < 64; ++i) {
+        move = new Move(toX(i), toY(i));
+        if (board.checkMove(move,s)) {
+            num++;
+            stack.insert(stack.begin(), move);
+        }
+    }
+    return num;
+}
+
+/**
+ * Pops a move from the stack
+ */
+ Move *Player::pop() {
+    Move *move = stack[0];
+    stack.erase(stack.begin());
+    return move;
+ }
 
 /**
  * Set move priority order according to Roxanne algorithm
@@ -152,6 +224,4 @@ void Player::dequeueMove(Move *move) {
             return;
         }
     }
-
-    cerr << "dequeueMove error: No move dequeued\n";
 }
