@@ -8,13 +8,13 @@ void Heuristic::update() {
     // TODO
 }
 
-Move* Heuristic::getBest() {
+Move* Heuristic::getBest(Side side) {
     // TODO
     update();
     return nullptr;
 }
 
-double Heuristic::getWeight(int ind) {
+double Heuristic::getWeight(Side side, int ind) {
     // TODO
     return -1;
 }

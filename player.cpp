@@ -218,15 +218,19 @@ MoveScore Player::recursiveMinimax(MinimaxTuple tuple) {
     } else {  // Node of decision tree
         for (auto m : openMoves) {
             // Update tuple data for next moves
-            --depth;
+            int nextDepth = depth - 1;
+            Player nextPlayer = player;
+            double nextWeight;
+
             if (player == side) {
-                player = opponent;
-                weight += heuristic.getWeight(m->getX(), m->getY());
+                nextPlayer = opponent;
+                nextWeight =
+                    weight + heuristic.getWeight(m->getX(), m->getY());
             } else {
                 player = side;
-                weight -= heuristic.getWeight(m->getX(), m->getY());
+                nextWeight =
+                    weight - heuristic.getWeight(m->getX(), m->getY());
             }
-
             // For each possible move, try move and explore next level of tree
             board.doMove(m, player);
 

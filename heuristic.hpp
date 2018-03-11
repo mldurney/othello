@@ -20,9 +20,11 @@ class Heuristic {
     ~Heuristic() {}
 
     // Heuristic methods
-    Move* getBest();
-    double getWeight(int ind);
-    double getWeight(int x, int y) { return getWeight(to1D(x, y)); }
+    Move* getBest(Side side);
+    double getWeight(Side side, int ind);
+    double getWeight(Side side, int x, int y) {
+        return getWeight(side, to1D(x, y));
+    }
 };
 
 #endif  // __HEURISTIC_H__
