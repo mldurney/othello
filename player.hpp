@@ -1,10 +1,10 @@
 #ifndef __PLAYER_H__
 #define __PLAYER_H__
 
-#include <algorithm>
 #include <array>
 #include <iostream>
 #include <limits>
+#include <numeric>
 #include <tuple>
 #include <vector>
 
@@ -23,9 +23,8 @@ enum Strategy { SIMPLE, MINIMAX, MC };
 
 // Tuple of (pointer to Move, int score of move)
 typedef std::tuple<Move *, double> MoveScore;
-// Tuple of (side, remaining depth, previous Moves pointers, heuristic weights)
-typedef std::tuple<int, int, Move *, std::vector<Move *>, std::vector<double>>
-    MinimaxTuple;
+// Tuple of (side, remaining depth, heuristic weight)
+typedef std::tuple<Side, int, double> MinimaxTuple;
 
 class Player {
    private:
@@ -45,8 +44,9 @@ class Player {
     int mcSimulations = MC_SIMULATIONS;
 
     // Different move algorithms
-    Move *simple();      // Apply just heuristic
-    Move *minimax();     // Apply minimax (with heuristic)
+    Move *simple();   // Apply just heuristic
+    Move *minimax();  // Apply minimax (with heuristic)
+    MoveScore recursiveMinimax(MinimaxTuple tuple);
     Move *montecarlo();  // Apply Monte Carlo (with heuristic)
 
     // Track and manage memory of moves

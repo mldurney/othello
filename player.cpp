@@ -93,7 +93,7 @@ void Player::deleteMoves() {
  */
 void Player::testMinimax() {
     testingMinimax = true;
-    depth = 2;
+    mmDepth = 2;
     setHeuristic(NONE);
     algorithm = minimax;
 }
@@ -139,21 +139,10 @@ Move *Player::simple() {
  * picking move based on number of stones in favor of player
  */
 Move *Player::minimax() {
-    MoveScore best =
-        recursiveMinimax((side, mmDepth - 1, std::vector<Move *>()));
+    MoveScore best = recursiveMinimax(MinimaxTuple(side, mmDepth - 1, 0));
 
-    for (int i = 0; i < numPush; i++) {
-        move2 = pop();
-        tempBoard2 = tempBoard1->copy();  // Board at depth 2
-        tempBoard2->doMove(move2, opponent);
-        roxGain2 = roxGainTrans(order[to1D(move2->getX(), move2->getY())]);
-        gain = tempBoard2->count(side) - tempBoard2->count(opponent);
-        gain -= roxGain2;
-        gain += roxGain1;
-        if (gain < minGain) minGain = gain;
-    }
-
-    Move *bestMove = new Move(best<0>->getX(), best<0>->getY());
+    Move *bestMove =
+        new Move(std::get<0>(best)->getX(), std::get<0>(best)->getY());
     board.doMove(bestMove, side);
     deleteMoves();
     return bestMove;
@@ -172,10 +161,10 @@ MoveScore Player::recursiveMinimax(MinimaxTuple tuple) {
     }
 
     // Unpack tuple data
-    int player = tuple<0>;
-    int depth = tuple<1>;
-    std::vector<Move *> previous = tuple<2>;
-    std::vector<double> weights = tuple<3>;
+    Side player;
+    int depth;
+    double weight;
+    std::tie(player, depth, weight) = tuple;
 
     // Get available moves given current board state
     std::vector<Move *> openMoves = getMoves(player);
@@ -189,19 +178,18 @@ MoveScore Player::recursiveMinimax(MinimaxTuple tuple) {
             bestScore = std::numeric_limits<int>::min();
 
             for (auto m : openMoves) {
-                board.doMove(m);
+                board.doMove(m, side);
 
-                double sum =
-                    std::accumulate(weights.begin(), weights.end(), 0) +
-                    heuristic.getWeight();
-                double score = board.count(side) - board.count(opponent) + sum;
+                weight += heuristic.getWeight(m->getX(), m->getY());
+                double score =
+                    board.count(side) - board.count(opponent) + weight;
 
                 if (score > bestScore) {
                     bestScore = score;
                     bestMove = m;
                 }
 
-                undoMove(m);
+                board.undoMove(m);
             }
         }
         // Find worst move, given that player is opposing side
@@ -209,39 +197,42 @@ MoveScore Player::recursiveMinimax(MinimaxTuple tuple) {
             bestScore = std::numeric_limits<int>::max();
 
             for (auto m : openMoves) {
-                board.doMove(m);
+                board.doMove(m, opponent);
 
-                double sum =
-                    std::accumulate(weights.begin(), weights.end(), 0) -
-                    heuristic.getWeight();
-                double score = board.count(side) - board.count(opponent) + sum;
+                weight -= heuristic.getWeight(m->getX(), m->getY());
+                double score =
+                    board.count(side) - board.count(opponent) + weight;
 
                 if (score < bestScore) {
                     bestScore = score;
                     bestMove = m;
                 }
 
-                undoMove(m);
+                board.undoMove(m);
             }
 
             bestScore *= -1;
         }
 
-        best<0> = bestMove;
-        best<1> = bestScore;
+        best = MoveScore(bestMove, bestScore);
     } else {  // Node of decision tree
         for (auto m : openMoves) {
             // Update tuple data for next moves
-            player = (player == side) ? opponent : side;
             --depth;
-            previous.push_back(m);
+            if (player == side) {
+                player = opponent;
+                weight += heuristic.getWeight(m->getX(), m->getY());
+            } else {
+                player = side;
+                weight -= heuristic.getWeight(m->getX(), m->getY());
+            }
 
             // For each possible move, try move and explore next level of tree
-            board.doMove(m);
+            board.doMove(m, player);
 
             MoveScore current =
-                recursiveMinimax(MinimaxTuple(player, depth, previous));
-            if (current<1>> best<1>) {
+                recursiveMinimax(MinimaxTuple(player, depth, weight));
+            if (std::get<1>(current) > std::get<1>(best)) {
                 best = current;
             }
 
