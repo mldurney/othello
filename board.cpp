@@ -27,16 +27,23 @@ Board *Board::copy() {
     return newBoard;
 }
 
-bool Board::occupied(int x, int y) { return taken[x + 8 * y]; }
+bool Board::occupied(int ind) { return taken[ind]; }
 
-bool Board::get(Side side, int x, int y) {
-    return occupied(x, y) && (black[x + 8 * y] == (side == BLACK));
+bool Board::get(Side side, int ind) {
+    return occupied(ind) && (black[ind] == (side == BLACK));
 }
 
-void Board::set(Side side, int x, int y) {
-    taken.set(x + 8 * y);
-    black.set(x + 8 * y, side == BLACK);
+void Board::set(Side side, int ind) {
+    taken.set(ind);
+    black.set(ind, side == BLACK);
 }
+
+void Board::unset(int ind) {
+    taken.set(ind, false);
+    black.set(ind, false);
+}
+
+bool Board::onBoard(int ind) { return (0 <= ind && ind < 64); }
 
 bool Board::onBoard(int x, int y) {
     return (0 <= x && x < 8 && 0 <= y && y < 8);
@@ -133,6 +140,20 @@ void Board::doMove(Move *m, Side side) {
         }
     }
     set(side, X, Y);
+}
+
+/*
+ * Modifies the board to reflect undoing the specified move.
+ * Returns true if move undo successful, false otherwise.
+ */
+bool Board::undoMove(Move *move) {
+    int ind = to1D(move->getX(), move->getY());
+    if (onBoard(ind) && isOccupied(ind)) {
+        unset(ind);
+        return true;
+    }
+
+    return false;
 }
 
 /*

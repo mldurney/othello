@@ -1,0 +1,256 @@
+#ifndef __HEURISTIC_H__
+#define __HEURISTIC_H__
+
+#include <array>
+#include <vector>
+#include "board.hpp"
+#include "common.hpp"
+using namespace std;
+
+class Heuristic {
+   private:
+    int order[64];                // For Roxanne, priority order of squares
+    vector<array<int, 2>> queue;  // For Roxanne, {ind, priority} of squares
+    vector<Move *> stack;         // For Minimax, Combination
+
+    double roxGainTrans(double roxGain);
+
+    void setOrder();
+    void setSquares(vector<array<int, 2>> squares, int priority);
+    void loadQueue();
+    void dequeueMove(Move *move);
+};
+
+#endif  // __HEURISTIC_H__
+
+setOrder();
+if (strategy == ROXANNE) loadQueue();
+
+double Player::roxGainTrans(double roxGain) {
+    return WEIGHT_C / (roxGain * roxGain * roxGain);
+}
+/**
+ * Set move priority order according to Roxanne algorithm
+ */
+void Player::setOrder() {
+    // Set corners to priority 1
+    vector<array<int, 2>> squares;
+    squares.insert(squares.end(), {{0, 0}});
+    setSquares(squares, 1);
+
+    // Set center 4x4 to priority 2
+    squares.clear();
+    squares.insert(squares.end(), {{2, 2}, {2, 3}, {3, 2}});
+    setSquares(squares, 2);
+
+    // Set edges, not adjacent to corner, to priority 3
+    squares.clear();
+    squares.insert(squares.end(), {{0, 2}, {0, 3}, {2, 0}, {3, 0}});
+    setSquares(squares, 3);
+
+    // Set inner-edges, not diagonal to corner, to priority 4
+    squares.clear();
+    squares.insert(squares.end(), {{1, 2}, {1, 3}, {2, 1}, {3, 1}});
+    setSquares(squares, 4);
+
+    // Set squares surrounding corder to priority 5
+    squares.clear();
+    squares.insert(squares.end(), {{0, 1}, {1, 0}, {1, 1}});
+    setSquares(squares, 5);
+}
+
+/**
+ * Set move priority for squares and rotationally symmetrical counterparts
+ * Uses x, y coordinates for square in upper-left quadrant
+ */
+void Player::setSquares(vector<array<int, 2>> squares, int priority) {
+    for (auto &s : squares) {
+        if (s[0] < 0 || s[0] >= 4 || s[1] < 0 || s[1] >= 4) {
+            cerr << "setSquares error: Invalid index! Skipping square...\n";
+            continue;
+        }
+
+        int ul = to1D(s[0], s[1]);          // Upper-left square
+        int ur = to1D(7 - s[0], s[1]);      // Upper-right square
+        int ll = to1D(s[0], 7 - s[1]);      // Lower-left square
+        int lr = to1D(7 - s[0], 7 - s[1]);  // Lower-right square
+
+        order[ul] = order[ur] = order[ll] = order[lr] = priority;
+    }
+}
+
+/**
+ * Load queue of moves to attempt first, based on priority order
+ */
+void Player::loadQueue() {
+    vector<array<int, 2>>::iterator it;
+
+    for (int i = 0; i < 64; ++i) {
+        if (board.isOccupied(toX(i), toY(i))) {
+            continue;
+        }
+
+        for (it = queue.begin(); it != queue.end(); ++it) {
+            // Insert index, priority pair as early as possible in queue
+            if (order[i] <= (*it)[1]) {
+                queue.insert(it, {i, order[i]});
+                break;
+            }
+        }
+
+        // If index not inserted earlier, then priority greater yet
+        if (it == queue.end()) {
+            queue.push_back({i, order[i]});
+        }
+    }
+}
+
+/**
+ * Remove move from queue
+ */
+void Player::dequeueMove(Move *move) {
+    int ind = to1D(move->getX(), move->getY());
+
+    for (vector<array<int, 2>>::iterator it = queue.begin(); it != queue.end();
+         ++it) {
+        if ((*it)[0] == ind) {
+            queue.erase(it);
+            return;
+        }
+    }
+}
+for (vector<array<int, 2>>::iterator it = queue.begin(); it != queue.end();
+     ++it) {
+    move->setX(toX((*it)[0]));
+    move->setY(toY((*it)[0]));
+
+    if (board.checkMove(move, side)) {
+        queue.erase(it);
+    }
+}
+
+Move *bestMove = nullptr, *move1, *move2;
+int maxMinGain = -(INF), minGain;
+int numPush;
+int gain;
+Board *tempBoard1, *tempBoard2;
+
+// Examines all possible moves for player
+loadStack(side, &board);
+while (stack.size() > 0) {
+    minGain = INF;
+    move1 = pop();
+    tempBoard1 = board.copy();  // Board at depth 1
+    tempBoard1->doMove(move1, side);
+
+    // For each player move, examines possible opponent moves
+    numPush = loadStack(opponent, tempBoard1);
+    for (int i = 0; i < numPush; i++) {
+        move2 = pop();
+        tempBoard2 = tempBoard1->copy();  // Board at depth 2
+        tempBoard2->doMove(move2, opponent);
+        gain = tempBoard2->count(side) - tempBoard2->count(opponent);
+        if (gain < minGain) minGain = gain;
+    }
+
+    // Picks player's best move
+    if (minGain > maxMinGain) {
+        bestMove = move1;
+        maxMinGain = minGain;
+    }
+}
+
+board.doMove(bestMove, side);
+return bestMove;
+
+// Stack of MinimaxTuples
+typedef std::stack<MinimaxTuple> MinimaxStack;
+
+/**
+ * For minimax, pushes stack of valid moves, in no particular order
+ * @return number of moves pushed
+ */
+int Player::loadStack(Side s, Board *b) {
+    Move *move;
+    int num = 0;
+    for (int i = 0; i < 64; ++i) {
+        move = new Move(toX(i), toY(i));
+        if (b->checkMove(move, s)) {
+            num++;
+            stack.insert(stack.begin(), move);
+        }
+    }
+    return num;
+}
+
+/**
+ * Prints the stack for testing purposes
+ */
+void Player::printStack() {
+    for (Move *m : stack) {
+        cerr << "(" << m->getX() << ", " << m->getY() << ") ";
+    }
+    cerr << endl;
+}
+
+/**
+ * Pops a move from the stack
+ */
+Move *Player::pop() {
+    Move *move = stack[0];
+    stack.erase(stack.begin());
+    return move;
+}
+
+///////////////////////////////////////////////////////////
+// MANAGE MOVE ORDER AND PRIORITIES                      //
+///////////////////////////////////////////////////////////
+
+
+
+ // Examines all possible moves for player
+    std::vector<Move *> options = findOptions(Side side);
+    while (!mmStack.empty() && timer.remaining() > 1000) {
+        // Pop top most move (and associated data) from stack
+        MinimaxTuple tuple = mmStack.top();
+        mmStack.pop();
+
+        // Unpack tuple of move data
+        int player = tuple<0>;
+        int depth = tuple<1>;
+        Move current = tuple<2>;
+        std::vector<Move> previous = tuple<3>;
+
+        board.doMove(current, player);
+        previous.push_back(current);
+
+        if (depth == 0) {  // Leaf of minimax decision tree
+
+        } else {
+            mmStackLoad(player, depth, previous);
+        }
+
+        move1 = pop();
+        tempBoard1 = board.copy();  // Board at depth 1
+        tempBoard1->doMove(move1, side);
+        roxGain1 = roxGainTrans(order[to1D(move1->getX(), move1->getY())]);
+
+        // For each player move, examines possible opponent moves
+        numPush = loadStack(opponent, tempBoard1);
+        for (int i = 0; i < numPush; i++) {
+            move2 = pop();
+            tempBoard2 = tempBoard1->copy();  // Board at depth 2
+            tempBoard2->doMove(move2, opponent);
+            roxGain2 = roxGainTrans(order[to1D(move2->getX(), move2->getY())]);
+            gain = tempBoard2->count(side) - tempBoard2->count(opponent);
+            gain -= roxGain2;
+            gain += roxGain1;
+            if (gain < minGain) minGain = gain;
+        }
+
+        // Picks player's best move
+        if (minGain > maxMinGain) {
+            bestMove = move1;
+            maxMinGain = minGain;
+        }
+    }

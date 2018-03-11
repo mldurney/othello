@@ -1,48 +1,69 @@
 #ifndef __PLAYER_H__
 #define __PLAYER_H__
 
+#include <algorithm>
 #include <array>
 #include <iostream>
+#include <limits>
+#include <tuple>
 #include <vector>
+
 #include "board.hpp"
 #include "common.hpp"
-using namespace std;
+#include "heuristic.hpp"
+#include "timer.hpp"
 
-#define INF 1000000000
-#define STRATEGY COMBINATION
-#define WEIGHT_C 10
+#define PATTERN ROXANNE     // Heuristic pattern
+#define STRATEGY MINIMAX    // Algorithm stategry
+#define MINIMAX_DEPTH 5     // Depth for minimax algorithm
+#define MC_SIMULATIONS 100  // Number of Monte Carlo simulations to run
+#define WEIGHT 10
+
+enum Strategy { SIMPLE, MINIMAX, MC };
+
+// Tuple of (pointer to Move, int score of move)
+typedef std::tuple<Move *, double> MoveScore;
+// Tuple of (side, remaining depth, previous Moves pointers, heuristic weights)
+typedef std::tuple<int, int, Move *, std::vector<Move *>, std::vector<double>>
+    MinimaxTuple;
 
 class Player {
    private:
-    enum Strategy { ROXANNE, MINIMAX, COMBINATION };
     Board board;
+    Timer timer;
+    int turn = 0;
     Side side;
     Side opponent;
-    int order[64];                // For Roxanne, priority order of squares
-    vector<array<int, 2>> queue;  // For Roxanne, {ind, priority} of squares
-    vector<Move *> stack;         // For Minimaz, Combination
-    Strategy strat;
-    void setOrder();
-    void setSquares(vector<array<int, 2>> squares, int priority);
-    void loadQueue();
-    void dequeueMove(Move *move);
-    int loadStack(Side s, Board *b);
-    Move *pop();
-    int to1D(int x, int y) { return x + 8 * y; }
-    int toX(int ind) { return ind % 8; }
-    int toY(int ind) { return ind / 8; }
-    double roxGainTrans(double roxGain);
-    void printStack();
+    Pattern pattern = PATTERN;
+    Strategy strategy = STRATEGY;
+    Heuristic heuristic;
+    Move *(Player::*algorithm)();  // Pointer to move algorithm
+
+    // Algorithm specific variables and methods
+    std::vector<Move *> getMoves(Side player);
+    int mmDepth = MINIMAX_DEPTH;
+    int mcSimulations = MC_SIMULATIONS;
+
+    // Different move algorithms
+    Move *simple();      // Apply just heuristic
+    Move *minimax();     // Apply minimax (with heuristic)
+    Move *montecarlo();  // Apply Monte Carlo (with heuristic)
+
+    // Track and manage memory of moves
+    std::vector<Move *> allocatedMoves;
+    void deleteMoves();
 
    public:
     Player(Side s);
     ~Player();
 
     Move *doMove(Move *opponentsMove, int msLeft);
+    void setBoard(Board *b) { board = *(b->copy()); }
+    void setHeuristic(Pattern p);
 
-    // Flag to tell if the player is running within the test_minimax context
-    bool testingMinimax;
-    void setBoard(Board *b);
+    // Set to minimax testing mode
+    bool testingMinimax = false;
+    void testMinimax();
 };
 
 #endif

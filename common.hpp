@@ -3,6 +3,11 @@
 
 enum Side { WHITE, BLACK };
 
+// Helper functions to translate coordinates
+int to1D(int x, int y) { return x + 8 * y; }
+int toX(int ind) { return ind % 8; }
+int toY(int ind) { return ind / 8; }
+
 class Move {
    public:
     int x, y;
